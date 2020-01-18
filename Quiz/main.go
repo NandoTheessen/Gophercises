@@ -44,16 +44,16 @@ func ParseCsv(filename string) (tasks []Task, err error){
 
 	defer f.Close()
 
-	scanner := csv.NewReader(bufio.NewReader(f))
+	scanner := csv.NewReader(f)
 
 	for {
-		val, err := scanner.Read()
+		line, err := scanner.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			fmt.Println(err)
 		}
-		tasks = append(tasks, Task{term: val[0], result: val[1]})
+		tasks = append(tasks, Task{term: line[0], result: strings.TrimSpace(line[1])})
 	}
 
 	return tasks, nil
@@ -88,23 +88,17 @@ func main() {
 
 	// Create two channels, one for the result of the quizz, one to send interrupt signal
 	// once the time is up.
-	done := make(chan bool)
+	// done := make(chan bool)
 	res := make(chan string)
 
-	// Timeout goroutine sending interrupt signal after <timeout>
-	go func() {
-		duration := time.Duration(timer)
-		time.Sleep(duration * time.Second)
-		done <- true
-	}()
 	// Quiz goroutine running the quiz in the meantime
 	go func() {
 		res <- RunQuiz(tasks)
 	}()
-
+	timer := time.NewTimer(time.Duration(timer) * time.Second)
 	select {
-	case <- done:
-		fmt.Print("\nYou run out of time!\n")
+	case <- timer.C:
+		fmt.Print("\nYou ran out of time!\n")
 		return
 	case r := <- res:
 			fmt.Println(r)
