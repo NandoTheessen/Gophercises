@@ -13,7 +13,7 @@ import (
 	"io"
 )
 
-type Task struct {
+type task struct {
 	term string
 	result string
 }
@@ -31,12 +31,12 @@ func init() {
 
 // ParseCsv reads the content of a csv and parses it's contents into a predefined struct "Task"
 // as a paremeter it takes the filename string, pointing to a file on the filesystem.
-func ParseCsv(filename string) (tasks []Task, err error){
+func parseCsv(filename string) (tasks []task, err error){
 	var f *os.File
 	if filename != "" {
 		f, err = os.Open(filename)
 		if err != nil {
-			return nil, fmt.Errorf("File %s does not exists\n", filename)
+			return nil, fmt.Errorf("file %s does not exists", filename)
 		}
 	} else {
 		f, err = os.Open("./problems.csv")
@@ -53,7 +53,7 @@ func ParseCsv(filename string) (tasks []Task, err error){
 		} else if err != nil {
 			fmt.Println(err)
 		}
-		tasks = append(tasks, Task{term: line[0], result: strings.TrimSpace(line[1])})
+		tasks = append(tasks, task{term: line[0], result: strings.TrimSpace(line[1])})
 	}
 
 	return tasks, nil
@@ -61,7 +61,7 @@ func ParseCsv(filename string) (tasks []Task, err error){
 
 // RunQuiz iterates over the parsed Tasks, prompts the user with a term and then compares the user input
 // with the desired solution
-func RunQuiz(tasks []Task) string{
+func RunQuiz(tasks []task) string{
 	stdinReader := bufio.NewReader(os.Stdin)
 	var result int
 	maxPoints := len(tasks)
@@ -70,18 +70,21 @@ func RunQuiz(tasks []Task) string{
 		fmt.Printf("%s = ", task.term)
 		text, _ := stdinReader.ReadString('\n')
 		text = strings.TrimRight(text, "\n")
-		if task.result == text {
+		if task.result == normalizeString(text) {
 			result++
 		}
 	}
 	return fmt.Sprintf("You've scored %d out of %d Points!\n", result, maxPoints)
 }
 
+func normalizeString(s string) string{
+	return strings.TrimRight(strings.ToLower(s), "\n")
+}
 
 func main() {
 
 	// Parse the CSV file & combine the output into an array of Tasks
-	tasks, err := ParseCsv(filename)
+	tasks, err := parseCsv(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
